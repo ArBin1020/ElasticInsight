@@ -1,4 +1,5 @@
-1. Pull elasticsearch (7.16.2) images
+1. docker
+Pull elasticsearch (7.16.2) images
 docker pull elasticsearch:7.16.2
 
 Pull kibana (7.16.2) images
