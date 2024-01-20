@@ -25,8 +25,8 @@ query = {
 aggs = {
     "statistics": {
         "scripted_metric": {
-            "params":{
-                "gpsid_list" : get_gpsid_list()
+            "params": {
+                "gpsid_list": get_gpsid_list()
             },
             "init_script": """
                 state.transactions = new HashMap();
@@ -34,37 +34,46 @@ aggs = {
             "map_script": """
                 String name = doc.name.value;
                 String lv1 = name.substring(0, name.indexOf("|"));
-                if(!state.transactions.containsKey(lv1)){
-                    state.transactions[lv1] = 1;
+                List user_info = doc.user_info;
+                if (!state.transactions.containsKey(lv1)) {
+                    state.transactions[lv1] = new HashMap();
                 }
-                else{
-                    state.transactions[lv1] += 1;
+                for (int i = 0; i < user_info.size(); i++) {
+                    String gpsid = user_info[i].substring(0, user_info[i].indexOf(","));
+                    int count = Integer.parseInt(user_info[i].substring(user_info[i].indexOf(",") + 1));
+                    Map gpsid_count = new HashMap();
+                    gpsid_count.put(gpsid, count);
                 }
+                // transaction ['個人清潔':{}]
+                // gpsid_count ['gpsid':count, 'gpsid':count, ...]
             """,
             "combine_script": """
                 return state.transactions;
             """,
             "reduce_script": """
-                Map result = states.remove(0);
-                while(states.size() > 0){
-                    Map data_buffer = states.remove(0);
-                    for(lv1 in data_buffer.keySet()){
-                        if(!result.containsKey(lv1)){
-                            result[lv1] = data_buffer[lv1];
-                        }
-                        else{
-                            result[lv1] += data_buffer[lv1];
-                        }
-                    }
-                }
+                
                 return result;
             """
         }
     }
 }
-
+# Map result = states.remove(0);
+#                 while (states.size() > 0) {
+#                     Map data_buffer = states.remove(0);
+#                     for (lv1 in data_buffer.keySet()) {
+#                         if (!result.containsKey(lv1)) {
+#                             result[lv1] = data_buffer[lv1];
+#                         } else {
+#                             result[lv1] += data_buffer[lv1];
+#                         }
+#                     }
+#                 }
 if __name__ == "__main__":
-    es = Elasticsearch(hosts='localhost', port=9200)
+    
+    start = __import__('time').time()
+    es = Elasticsearch(hosts='http://localhost:9200', timeout=5000)
     response = es.search(index="anal_product_2019-09", query=query, aggs=aggs, size=0)
-    print(json.dumps(response, ensure_ascii=False, indent=4))
+    end = __import__('time').time() - start
+    print("Time: ", end)
+    print(response)
     print("Correct: ", check(response))

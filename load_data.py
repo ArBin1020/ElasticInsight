@@ -17,6 +17,6 @@ def load_datas():
     return actions
 
 if __name__ == "__main__":
-    es = Elasticsearch(hosts='localhost', port=9200)
+    es = Elasticsearch('http://localhost:9200')
     data = load_datas()
     helpers.bulk(es, data)
