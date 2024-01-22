@@ -1,3 +1,5 @@
+python version 3.11.4
+
 ### docker 
   - Pull elasticsearch (7.16.2) images
     - ```docker pull elasticsearch:7.16.2```
@@ -16,7 +18,6 @@
 
 ### requirements: 
 elasticsearch==7.16.2
-
 ### open [url](http://localhost:5601/app/dev_tools#/console)
 ### 建立分片
 ```
