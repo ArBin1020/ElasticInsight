@@ -32,7 +32,7 @@ aggs = {
                     for(lv1 in data_buffer.keySet()){
                         int  t_aud = 0, p_aud = 0, t_sum = 0, p_sum = 0;
                         HashMap mix = new HashMap();
-                        for(gpsid in data_buffer[lv1].ke    ySet()){
+                        for(gpsid in data_buffer[lv1].keySet()){
                             t_sum += data_buffer[lv1].get(gpsid);
                             if(params.gpsid_list.contains(gpsid)){
                                 p_aud += data_buffer[lv1].get(gpsid);

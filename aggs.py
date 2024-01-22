@@ -41,17 +41,53 @@ aggs = {
                 for (int i = 0; i < user_info.size(); i++) {
                     String gpsid = user_info[i].substring(0, user_info[i].indexOf(","));
                     int count = Integer.parseInt(user_info[i].substring(user_info[i].indexOf(",") + 1));
-                    Map gpsid_count = new HashMap();
-                    gpsid_count.put(gpsid, count);
+                    state.transactions[lv1].put(gpsid, state.transactions[lv1].getOrDefault(gpsid, 0)+count);
                 }
-                // transaction ['個人清潔':{}]
+                // transaction ['個人清潔':{id: count, id:count}, '家電':{}, ...   ]
                 // gpsid_count ['gpsid':count, 'gpsid':count, ...]
             """,
             "combine_script": """
                 return state.transactions;
             """,
             "reduce_script": """
-                
+                Set gpsid_list = new HashSet(params.gpsid_list);
+                Map result = new HashMap(); // 存放分析結果
+                Map visitedMap = new HashMap(); // 存放已經分析過的 lv1
+
+                while (states.size() > 0) {
+                    Map data = states.remove(0); // data = {'個人清潔':{}}
+                    for (lv1 in data.keySet()) {
+                        int personal_count = 0, times_count = 0; // 受眾人數, 受眾次數
+                        int total_personal_count = 0, total_times_count = 0;// 所有人數, 所有次數
+                        Set visited = visitedMap.computeIfAbsent(lv1, k -> new HashSet());
+
+
+                        // 人數如果沒有重複的話，就是 data[lv1].get(id)                     
+                        for(id in data[lv1].keySet()) {
+                            if (gpsid_list.contains(id)) {
+                                times_count += data[lv1].get(id);
+                                personal_count += (visited.contains(id) ? 0 : 1);
+                            }
+                            total_personal_count += (visited.contains(id) ? 0 : 1);
+                            total_times_count += data[lv1].get(id);
+                            visited.add(id);
+                        }
+
+                        if (!result.containsKey(lv1)) {
+                            result.put(lv1, new HashMap());
+                            result[lv1].put("受眾人數", personal_count);
+                            result[lv1].put("受眾次數", times_count);
+                            result[lv1].put("所有人數", total_personal_count);  
+                            result[lv1].put("所有次數", total_times_count);
+                        }
+                        else {
+                            result[lv1].put("受眾人數", result[lv1].get("受眾人數") + personal_count);
+                            result[lv1].put("受眾次數", result[lv1].get("受眾次數") + times_count);
+                            result[lv1].put("所有人數", result[lv1].get("所有人數") + total_personal_count);
+                            result[lv1].put("所有次數", result[lv1].get("所有次數") + total_times_count);
+                        }
+                    }
+                }
                 return result;
             """
         }
@@ -76,4 +112,6 @@ if __name__ == "__main__":
     end = __import__('time').time() - start
     print("Time: ", end)
     print(response)
+    with open("response.json", "w", encoding='utf-8') as f:
+        json.dump(response.get('aggregations', {}).get('statistics', {}).get('value', {}), f, indent=4, sort_keys=True, ensure_ascii=False)
     print("Correct: ", check(response))
