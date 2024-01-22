@@ -42,3 +42,11 @@ PUT /anal_product_2019-09/_mapping
   }
 }
 ```
+### load.data
+```
+python load_data.py
+```
+### run aggs.py
+```
+python aggs.py
+```
